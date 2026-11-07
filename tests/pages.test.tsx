@@ -40,7 +40,7 @@ describe("foundation routes", () => {
       screen.getByRole("heading", { level: 1, name: /The color workspace/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Static demonstration · Editing is coming soon/i),
+      screen.getByText(/One color, a world of possibilities/i),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Export/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Present/i })).toBeDisabled();

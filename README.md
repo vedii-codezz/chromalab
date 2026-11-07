@@ -2,7 +2,7 @@
 
 One color. An entire design language.
 
-A Next.js App Router creative color-system workspace. Phases 01–02 implement the editorial landing page, Studio foundation, and a pure OKLCH tonal engine with a static-input development demonstration. Interactive color editing is not implemented yet.
+A Next.js App Router creative color-system workspace. Phases 01–03 implement the editorial landing page, a pure OKLCH tonal engine, and an interactive manual color Studio with independent palettes, shade locks, undo/redo and validated local persistence.
 
 ## Run locally
 
@@ -33,7 +33,7 @@ Playwright starts its own development server at port 3100 and checks desktop and
 - Server-rendered landing and Studio routes, working navigation and skip link.
 - Shared warm neutral design system, editorial typography and static palette compositions.
 - Ten authored Blue hour shade examples, three authored palette families and static component previews.
-- Tool and inspector disclosure panels; presentation/export/brief controls explicitly unavailable.
+- Responsive tool/inspector disclosures; hue ring and saturation/lightness square, keyboard and touch controls, draft HEX/RGB/HSL entry, three independent palette families, generated shades, locks and inspector diagnostics. Presentation/export/brief controls remain unavailable.
 - Scoped GSAP entrance animation with context/media cleanup and reduced-motion support. Content is visible with JavaScript disabled.
 - Strict TypeScript, Tailwind v4, ESLint, Vitest/RTL and Playwright setup.
 - Strict HEX/RGB/HSL/OKLCH validation, ten-step OKLCH generation, chroma-based sRGB gamut mapping, exact normalized anchors/locks and structured diagnostics.
@@ -45,14 +45,14 @@ Playwright starts its own development server at port 3100 and checks desktop and
 - `components/layout/`: shared brand.
 - `components/shared/reveal.tsx`: small client animation boundary; the page content stays in server components.
 - `components/shared/responsive-panel.tsx`: native disclosure enhancement; panels collapse on small screens and reopen when desktop space returns.
-- `components/studio/`: workspace composition and the real engine's static-input development sample.
+- `components/studio/`: interactive workspace, picker, draft inputs, inspector, generated cards and labeled legacy studies.
 - `components/preview/`: authored examples; these do not resolve live tokens yet.
 - `lib/color/demo-palettes.ts`: immutable, hand-authored samples. No color mathematics.
 - `lib/color/{validation,conversion,gamut,tonal-scale,diagnostics}.ts`: pure engine modules without React, Zustand, browser or animation dependencies.
 - `types/color.ts`: public color input, output, options and diagnostic contracts.
 - `tests/`, `e2e/`: content contracts and real browser flows.
 
-Culori provides the engine's conversions. Zustand remains installed for future editing work and is deliberately unused. Empty token/export/persistence/store directories have not been created. Project state, undo/redo, local storage and token resolution are planned, not implemented.
+Culori provides the engine's conversions. Zustand owns the editable project, bounded history and versioned local persistence. `types/project.ts`, `store/color-studio-store.ts` and `lib/studio-project.ts` define those boundaries. The final semantic token resolver remains future work.
 
 Read the [design](docs/superpowers/specs/2026-11-05-chroma-lab-design.md) and [implementation plan](docs/superpowers/plans/2026-11-05-chroma-lab-implementation.md) for product decisions and future phases.
 
@@ -99,10 +99,20 @@ Limitations: opaque sRGB HEX output only; no Display P3, alpha, color names, CSS
 
 ## Next phase
 
-Phase 03 will add shared editable project state, manual controls and the common token resolver for previews/exports. These features are not implemented in Phase 02.
+Phase 03 manual editing is implemented. Brief recommendations, final semantic tokens, accessibility scoring, exports and cinematic presentation remain future work.
 
 ## Dependency notes
 
 `package-lock.json` records the resolved versions. The initial npm audit reports eight moderate development-tool advisories stemming from a transitive minimatch dependency in Next's ESLint configuration. The proposed automatic fix downgrades the Next ESLint config across a major version, so it has not been applied. No runtime dependency advisory was reported. Recheck with `npm audit` as upstream packages publish fixes. ESLint 9 is retained for compatibility with the React lint plugin's supported peer range.
 
-No deployment or GitHub push has been performed.
+The local repository is connected to the existing GitHub repository at https://github.com/vedii-codezz/chromalab. This phase does not push, deploy or create a commit. Deployment history has not been verified.
+
+## Phase 03 — manual editing
+
+Choose Primary, Secondary or Accent, drag the hue ring or inner saturation/lightness square, or commit a HEX/RGB/HSL field with Enter or blur. Escape restores the field. Arrow keys operate picker controls; Shift changes ten steps. Separate saturation and lightness sliders are available. Settings adjust the anchor, lightness spreads, chroma intensity and hue drift through the existing engine.
+
+All ten generated shades are selectable and lockable. A conflicting edit shows the engine diagnostic and retains the previous valid scale and locks. Undo/redo retain up to 50 edits; each pointer gesture is one edit. Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z work outside editable inputs. Reset requires confirmation and can be undone.
+
+The version 1 local project saves canonical family data after valid edits, excluding history, drafts and temporary drag state. Loading validates and regenerates every family after hydration; corrupt or unavailable storage recovers safely. Family/shade selection resets on refresh. Preview colors use temporary, explicitly labeled 600/100/400/800 mappings, not final semantic tokens.
+
+See the [Phase 03 architecture](docs/superpowers/specs/2026-11-07-chroma-lab-interactive-studio.md) and [implementation record](docs/superpowers/plans/2026-11-07-chroma-lab-interactive-studio.md). Browser persistence is device-local; no cloud or multi-tab merge is implemented. Arbitrary palette choices do not guarantee preview text contrast. Legacy authored palettes and the Phase 02 engine sample remain available in a disclosure.

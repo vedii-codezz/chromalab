@@ -1,13 +1,17 @@
 import { ArrowUpRight } from "lucide-react";
 
-export function ComponentPreview() {
+export function ComponentPreview({ live = false }: { live?: boolean }) {
   return (
     <section className="preview-panel" aria-labelledby="preview-heading">
       <div className="section-top">
         <h2 id="preview-heading" className="eyebrow">
           In context
         </h2>
-        <span className="micro muted">Static component preview</span>
+        <span className="micro muted">
+          {live
+            ? "Temporary mappings · 600 / 100 / 400 / 800"
+            : "Static component preview"}
+        </span>
       </div>
       <div className="preview-grid">
         <div className="type-example">

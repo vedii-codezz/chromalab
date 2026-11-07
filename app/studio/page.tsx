@@ -14,10 +14,10 @@ export default function Studio() {
           <Wordmark />
           <div className="project-title">
             <strong>Untitled color study</strong>
-            <span className="pill">Demo project</span>
+            <span className="pill">Local project</span>
           </div>
           <div className="studio-actions">
-            <span className="pill">Foundation preview</span>
+            <span className="pill">Manual editing</span>
             <button
               className="quiet-button"
               disabled
