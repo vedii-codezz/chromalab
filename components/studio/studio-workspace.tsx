@@ -2,20 +2,29 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { ResponsivePanel } from "@/components/shared/responsive-panel";
-import { ComponentPreview } from "@/components/preview/component-preview";
+import { LiveDesignPreview } from "@/components/preview/live-design-preview";
+import { Playground, ColorDetails } from "./playground";
+import { HarmonyExplorer } from "./harmony-explorer";
+import { CompatibilityInspector } from "./compatibility-inspector";
+import { ColorRoles } from "./color-roles";
 import { LegacyStudies } from "./legacy-studies";
 import { ColorInputs, colorStrings } from "./color-inputs";
 import { ColorPicker } from "./color-picker";
 import { studioStore, useStudio } from "@/store/color-studio-store";
 import { SHADE_IDS, type ShadeId } from "@/types/color";
-import type { CSSProperties } from "react";
 const actions = studioStore.getState();
 function active(s: ReturnType<typeof studioStore.getState>) {
-  return s.project.families.find((f) => f.id === s.activeFamilyId)!;
+  return s.project.colors.find((f) => f.id === s.activeFamilyId);
 }
 function Tools() {
   const family = useStudio(active);
-  const families = useStudio((s) => s.project.families);
+  const families = useStudio((s) => s.project.colors);
+  if (!family)
+    return (
+      <aside className="side-panel tools-panel">
+        <p>Add a color in the Playground to open the editing tools.</p>
+      </aside>
+    );
   return (
     <ResponsivePanel
       className="side-panel tools-panel"
@@ -30,7 +39,7 @@ function Tools() {
         <section className="tool-section">
           <h3>Color selection</h3>
           <label className="studio-field">
-            Palette family
+            Selected color
             <select
               value={family.id}
               onChange={(e) => actions.selectFamily(e.target.value)}
@@ -42,6 +51,10 @@ function Tools() {
               ))}
             </select>
           </label>
+          <ColorDetails
+            key={`${family.id}-${family.name}-${family.tags?.join()}`}
+            color={family}
+          />
           <ColorPicker key={family.id} />
           <ColorInputs />
         </section>
@@ -136,6 +149,12 @@ function Inspector() {
   const family = useStudio(active);
   const selected = useStudio((s) => s.selectedShade);
   const diagnostics = useStudio((s) => s.diagnostics);
+  if (!family)
+    return (
+      <aside className="side-panel inspector-panel">
+        <CompatibilityInspector />
+      </aside>
+    );
   const shade = family.scale.shades.find((s) => s.id === selected)!;
   const strings = colorStrings(shade.hex);
   return (
@@ -144,6 +163,7 @@ function Inspector() {
         Color inspector <ChevronDown size={14} />
       </summary>
       <div className="panel-content">
+        <CompatibilityInspector />
         <section className="tool-section">
           <h2 className="eyebrow">Inspector</h2>
           <div className="inspector-swatch" style={{ background: shade.hex }}>
@@ -204,25 +224,23 @@ function Inspector() {
 }
 function Canvas() {
   const family = useStudio(active);
-  const families = useStudio((s) => s.project.families);
   const selected = useStudio((s) => s.selectedShade);
   const canUndo = useStudio((s) => s.past.length > 0);
   const canRedo = useStudio((s) => s.future.length > 0);
   const message = useStudio((s) => s.storageMessage);
   const diagnostics = useStudio((s) => s.diagnostics);
   const [confirmReset, setConfirmReset] = useState(false);
-  const shades = family.scale.shades;
-  const hex = (id: ShadeId) => shades.find((s) => s.id === id)!.hex;
+  const shades = family?.scale.shades ?? [];
   return (
     <section className="canvas" aria-labelledby="workspace-heading">
       <div className="canvas-heading" data-reveal>
         <div>
           <p className="eyebrow muted">
-            Manual Studio / A considered beginning
+            Color Playground / Explore with intention
           </p>
           <h1 id="workspace-heading">The color workspace</h1>
         </div>
-        <span className="pill">Interactive / 03</span>
+        <span className="pill">Explore / 04</span>
       </div>
       <div className="history-toolbar">
         <button
@@ -242,13 +260,17 @@ function Canvas() {
         <button className="quiet-button" onClick={() => setConfirmReset(true)}>
           Reset project
         </button>
-        <span className="micro muted" role="status">
+        <span
+          className="micro muted"
+          role="status"
+          aria-label="Project storage"
+        >
           {message}
         </span>
       </div>
       {confirmReset && (
         <div className="reset-confirm" role="group" aria-label="Confirm reset">
-          <p>Reset all families and locks to the starter project?</p>
+          <p>Reset all colors, roles and locks to the starter project?</p>
           <button
             className="quiet-button"
             onClick={() => {
@@ -267,116 +289,91 @@ function Canvas() {
         </div>
       )}
       <p className="workspace-instruction">
-        One color, a world of possibilities. Choose a family, shape its tones,
-        and keep the shades you love.
+        One color, a world of possibilities. Collect colors, explore their
+        relationships, and keep the shades you love. Roles are optional.
       </p>
-      <div className="family-grid" data-reveal>
-        {families.map((f) => (
-          <button
-            className="family-card family-select"
-            key={f.id}
-            aria-label={`Select ${f.name} palette`}
-            aria-pressed={f.id === family.id}
-            onClick={() => actions.selectFamily(f.id)}
+      <Playground />
+      {family && (
+        <>
+          <section
+            className="shade-panel"
+            aria-labelledby="shade-heading"
+            data-reveal
           >
-            <div className="family-card-header">
-              <span>{f.name.toUpperCase()}</span>
-              <span>{f.id === family.id ? "Selected" : "Explore"}</span>
+            <div className="section-top">
+              <div className="shade-title">
+                <h2 id="shade-heading">{family.name}</h2>
+                <span>/ Generated tones</span>
+              </div>
+              <span className="micro muted">10 OKLCH shades</span>
             </div>
-            <div className="family-color" style={{ background: f.baseColor }} />
-            <div className="family-strip" aria-hidden="true">
-              {f.scale.shades.map((s) => (
-                <span key={s.id} style={{ background: s.hex }} />
+            <ol
+              className="shade-scale live-scale"
+              aria-label="Active generated shade scale"
+            >
+              {shades.map((s) => (
+                <li key={s.id} data-testid={`shade-${s.id}`}>
+                  <button
+                    className="shade-select"
+                    aria-label={`Inspect shade ${s.id}`}
+                    aria-pressed={selected === s.id}
+                    onClick={() => actions.selectShade(s.id)}
+                  >
+                    <span
+                      className="shade-block"
+                      style={{ background: s.hex }}
+                    />
+                    <b>{s.id}</b>
+                    <code>{s.hex}</code>
+                    <span className="shade-caption">
+                      {selected === s.id
+                        ? "Selected"
+                        : s.anchor
+                          ? "Anchor"
+                          : "Inspect"}
+                    </span>
+                  </button>
+                  <button
+                    className="shade-lock"
+                    aria-label={`${s.locked ? "Unlock" : "Lock"} shade ${s.id}`}
+                    aria-pressed={s.locked}
+                    onClick={() =>
+                      s.locked
+                        ? actions.unlockShade(s.id)
+                        : actions.lockShade(s.id)
+                    }
+                  >
+                    {s.locked ? (
+                      <LockKeyhole size={12} />
+                    ) : (
+                      <UnlockKeyhole size={12} />
+                    )}
+                    <span>{s.locked ? "Locked" : "Unlocked"}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <p className="scale-foot">
+              {family.anchor} is the exact base anchor · Locks preserve your
+              chosen tones
+            </p>
+            <div className="edit-diagnostics" aria-live="polite">
+              {diagnostics.map((d, i) => (
+                <p role="alert" key={i}>
+                  {d.code}: {d.message} Last valid scale retained.
+                </p>
               ))}
             </div>
-            <h2>{f.name}</h2>
-            <code>{f.baseColor}</code>
-          </button>
-        ))}
-      </div>
-      <section
-        className="shade-panel"
-        aria-labelledby="shade-heading"
-        data-reveal
-      >
-        <div className="section-top">
-          <div className="shade-title">
-            <h2 id="shade-heading">{family.name}</h2>
-            <span>/ Generated tones</span>
-          </div>
-          <span className="micro muted">10 OKLCH shades</span>
-        </div>
-        <ol
-          className="shade-scale live-scale"
-          aria-label="Active generated shade scale"
-        >
-          {shades.map((s) => (
-            <li key={s.id} data-testid={`shade-${s.id}`}>
-              <button
-                className="shade-select"
-                aria-label={`Inspect shade ${s.id}`}
-                aria-pressed={selected === s.id}
-                onClick={() => actions.selectShade(s.id)}
-              >
-                <span className="shade-block" style={{ background: s.hex }} />
-                <b>{s.id}</b>
-                <code>{s.hex}</code>
-                <span className="shade-caption">
-                  {selected === s.id
-                    ? "Selected"
-                    : s.anchor
-                      ? "Anchor"
-                      : "Inspect"}
-                </span>
-              </button>
-              <button
-                className="shade-lock"
-                aria-label={`${s.locked ? "Unlock" : "Lock"} shade ${s.id}`}
-                aria-pressed={s.locked}
-                onClick={() =>
-                  s.locked ? actions.unlockShade(s.id) : actions.lockShade(s.id)
-                }
-              >
-                {s.locked ? (
-                  <LockKeyhole size={12} />
-                ) : (
-                  <UnlockKeyhole size={12} />
-                )}
-                <span>{s.locked ? "Locked" : "Unlocked"}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-        <p className="scale-foot">
-          {family.anchor} is the exact base anchor · Locks preserve your chosen
-          tones
-        </p>
-        <div className="edit-diagnostics" aria-live="polite">
-          {diagnostics.map((d, i) => (
-            <p role="alert" key={i}>
-              {d.code}: {d.message} Last valid scale retained.
-            </p>
-          ))}
-        </div>
-      </section>
-      <div
-        className="live-preview"
-        data-reveal
-        style={
-          {
-            "--preview-action": hex(600),
-            "--preview-soft": hex(100),
-            "--preview-mid": hex(400),
-            "--preview-dark": hex(800),
-          } as CSSProperties
-        }
-      >
-        <ComponentPreview live />
-      </div>
+          </section>
+        </>
+      )}
+      <HarmonyExplorer />
+      <ColorRoles />
+      <LiveDesignPreview />
       <LegacyStudies />
       <footer className="canvas-footer">
         <span>A space to experiment.</span>
-        <span>MANUAL STUDIO / 03</span>
+        <span>COLOR PLAYGROUND / 04</span>
       </footer>
     </section>
   );

@@ -154,8 +154,8 @@ test("interrupted drag saves its valid result and remains one undo edit", async 
   expect(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("chroma-lab.project.v1")!).project
-          .families[0].baseColor,
+        JSON.parse(localStorage.getItem("chroma-lab.project.v2")!).project
+          .colors[0].baseColor,
     ),
   ).toBe(value);
   await page.mouse.up();

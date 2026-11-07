@@ -24,7 +24,7 @@ function DraftField({ format, value }: { format: string; value: string }) {
     const valid = studioStore.getState().updateBaseColor(draft);
     if (valid) {
       const state = studioStore.getState();
-      const hex = state.project.families.find(
+      const hex = state.project.colors.find(
         (f) => f.id === state.activeFamilyId,
       )!.baseColor;
       setDraft(
@@ -75,7 +75,7 @@ function DraftField({ format, value }: { format: string; value: string }) {
 }
 export function ColorInputs() {
   const family = useStudio((s) =>
-    s.project.families.find((f) => f.id === s.activeFamilyId)!,
+    s.project.colors.find((f) => f.id === s.activeFamilyId)!,
   );
   const strings = colorStrings(family.baseColor);
   return (

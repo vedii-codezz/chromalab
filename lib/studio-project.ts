@@ -1,115 +1,167 @@
 import { demoFamilies } from "./color/demo-palettes";
 import { generateTonalScale } from "./color/tonal-scale";
-import { SHADE_IDS, type HexColor } from "@/types/color";
-import type { ColorProject, PaletteFamily } from "@/types/project";
+import { SHADE_IDS } from "@/types/color";
+import {
+  COLOR_ROLES,
+  type ColorEntry,
+  type ColorProject,
+  type PaletteFamily,
+  type RoleAssignments,
+} from "@/types/project";
 
-export function generateFamily(
-  family: Omit<PaletteFamily, "scale" | "warnings">,
-) {
-  return generateTonalScale(family.baseColor, {
-    ...family.settings,
-    anchor: family.anchor,
-    locks: family.locks,
+export function generateFamily(color: ColorEntry) {
+  return generateTonalScale(color.baseColor, {
+    ...color.settings,
+    anchor: color.anchor,
+    locks: color.locks,
   });
+}
+export function createColor(
+  id: string,
+  baseColor: ColorEntry["baseColor"],
+  name = "Untitled color",
+): PaletteFamily | null {
+  const color: ColorEntry = {
+    id,
+    name,
+    baseColor,
+    anchor: 500,
+    settings: {
+      lightnessSpread: { lighter: 0.9, darker: 0.85 },
+      chromaIntensity: 1,
+      hueDrift: 0,
+    },
+    locks: {},
+  };
+  const result = generateFamily(color);
+  return result.ok
+    ? { ...color, scale: result.value, warnings: result.warnings }
+    : null;
 }
 export function starterProject(): ColorProject {
   return {
-    families: demoFamilies.map((seed) => {
-      const family = {
-        id: seed.role.toLowerCase(),
-        name: seed.role,
-        baseColor: seed.hex,
-        anchor: 500 as const,
-        settings: {
-          lightnessSpread: { lighter: 0.9, darker: 0.85 },
-          chromaIntensity: 1,
-          hueDrift: 0,
-        },
-        locks: {},
-      };
-      const result = generateFamily(family);
-      if (!result.ok) throw new Error("Invalid starter palette");
-      return { ...family, scale: result.value, warnings: result.warnings };
-    }),
+    version: 2,
+    colors: demoFamilies.map((seed) =>
+      createColor(seed.role.toLowerCase(), seed.hex, seed.role)!,
+    ),
+    roleAssignments: {},
   };
 }
-/** Only canonical data crosses the storage boundary; generated scales are rebuilt. */
+/** Canonical fields only: generated data and UI selections are never serialized. */
 export function serializeProject(project: ColorProject) {
   return JSON.stringify({
-    version: 1,
+    version: 2,
     project: {
-      families: project.families.map(
-        ({ id, name, baseColor, anchor, settings, locks }) => ({
+      colors: project.colors.map(
+        ({ id, name, baseColor, anchor, settings, locks, tags }) => ({
           id,
           name,
           baseColor,
           anchor,
           settings,
           locks,
+          ...(tags ? { tags } : {}),
         }),
       ),
+      roleAssignments: project.roleAssignments,
     },
   });
 }
+const record = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === "object" && !Array.isArray(v);
+const hex = (v: unknown) => typeof v === "string" && /^#[A-F0-9]{6}$/.test(v);
+
+/** Deterministic migration and validation. A failed entry rejects the whole candidate. */
 export function restoreProject(raw: string): ColorProject | null {
   try {
     const data = JSON.parse(raw);
+    if (!record(data) || !record(data.project)) return null;
+    const legacy = data.version === 1;
+    if (!legacy && data.version !== 2) return null;
+    const entries = legacy ? data.project.families : data.project.colors;
     if (
-      data?.version !== 1 ||
-      !Array.isArray(data.project?.families) ||
-      data.project.families.length !== 3
+      !Array.isArray(entries) ||
+      entries.length > 200 ||
+      (legacy && entries.length !== 3)
     )
       return null;
     const ids = new Set<string>();
-    const families: PaletteFamily[] = [];
-    for (const f of data.project.families) {
+    const colors: PaletteFamily[] = [];
+    for (const f of entries) {
       if (
-        !f ||
-        !["primary", "secondary", "accent"].includes(f.id) ||
+        !record(f) ||
+        typeof f.id !== "string" ||
+        !/^[a-zA-Z0-9_-]{1,100}$/.test(f.id) ||
         ids.has(f.id) ||
+        (legacy && !["primary", "secondary", "accent"].includes(f.id)) ||
         typeof f.name !== "string" ||
         !f.name.trim() ||
         f.name.length > 80 ||
-        !/^#[A-F0-9]{6}$/.test(f.baseColor) ||
-        !SHADE_IDS.includes(f.anchor) ||
-        !f.settings ||
-        !f.locks ||
-        Array.isArray(f.locks)
+        !hex(f.baseColor) ||
+        !SHADE_IDS.includes(f.anchor as never) ||
+        !record(f.settings) ||
+        !record(f.locks)
       )
         return null;
       if (
         Object.keys(f.settings).sort().join() !==
           "chromaIntensity,hueDrift,lightnessSpread" ||
-        Object.keys(f.settings.lightnessSpread ?? {})
-          .sort()
-          .join() !== "darker,lighter"
+        !record(f.settings.lightnessSpread) ||
+        Object.keys(f.settings.lightnessSpread).sort().join() !==
+          "darker,lighter"
       )
         return null;
-      for (const [id, hex] of Object.entries(f.locks))
-        if (
-          !SHADE_IDS.some((x) => String(x) === id) ||
-          typeof hex !== "string" ||
-          !/^#[A-F0-9]{6}$/.test(hex)
+      if (
+        Object.entries(f.locks).some(
+          ([id, value]) =>
+            !SHADE_IDS.some((x) => String(x) === id) || !hex(value),
         )
-          return null;
+      )
+        return null;
+      if (
+        f.tags !== undefined &&
+        (!Array.isArray(f.tags) ||
+          f.tags.length > 20 ||
+          f.tags.some(
+            (t) => typeof t !== "string" || !t.trim() || t.length > 40,
+          ))
+      )
+        return null;
       const canonical = {
-        id: f.id as string,
-        name: f.name as string,
-        baseColor: f.baseColor as HexColor,
+        id: f.id,
+        name: f.name,
+        baseColor: f.baseColor,
         anchor: f.anchor,
         settings: f.settings,
         locks: f.locks,
-      };
+        ...(f.tags ? { tags: [...new Set(f.tags)] } : {}),
+      } as ColorEntry;
       const result = generateFamily(canonical);
       if (!result.ok) return null;
       ids.add(f.id);
-      families.push({
+      colors.push({
         ...canonical,
         scale: result.value,
         warnings: result.warnings,
       });
     }
-    return { families };
+    const roles: RoleAssignments = {};
+    if (legacy) {
+      for (const role of ["primary", "secondary", "accent"] as const)
+        roles[role] = role;
+    } else {
+      if (!record(data.project.roleAssignments)) return null;
+      for (const [role, id] of Object.entries(data.project.roleAssignments)) {
+        if (
+          !COLOR_ROLES.includes(role as never) ||
+          typeof id !== "string" ||
+          !ids.has(id)
+        )
+          return null;
+        roles[role as keyof RoleAssignments] = id;
+      }
+    }
+    return { version: 2, colors, roleAssignments: roles };
   } catch {
     return null;
   }

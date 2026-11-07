@@ -17,7 +17,7 @@ export default function Studio() {
             <span className="pill">Local project</span>
           </div>
           <div className="studio-actions">
-            <span className="pill">Manual editing</span>
+            <span className="pill">Color Playground</span>
             <button
               className="quiet-button"
               disabled
@@ -38,7 +38,7 @@ export default function Studio() {
         </nav>
         <div className="studio-subnav">
           <nav className="mode-tabs" aria-label="Product modes">
-            <span aria-current="page">Manual Studio</span>
+            <span aria-current="page">Color Playground</span>
             <button disabled aria-describedby="future-controls">
               Client Brief <span className="pill">Soon</span>
             </button>

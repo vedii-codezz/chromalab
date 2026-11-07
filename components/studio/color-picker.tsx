@@ -1,14 +1,36 @@
-import { useState, type PointerEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type KeyboardEvent,
+} from "react";
+import { hslPixel } from "@/lib/color/picker";
 import { colorFromHex } from "@/lib/color/conversion";
 import { studioStore, useStudio } from "@/store/color-studio-store";
 const bound = (n: number) => Math.max(0, Math.min(1, n));
 export function ColorPicker() {
   const hex = useStudio(
-    (s) => s.project.families.find((f) => f.id === s.activeFamilyId)!.baseColor,
+    (s) => s.project.colors.find((f) => f.id === s.activeFamilyId)!.baseColor,
   );
   const hsl = colorFromHex(hex).hsl;
   const [rememberedHue, setRememberedHue] = useState(218);
   const hue = hsl.h ?? rememberedHue;
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const node = canvas.current;
+    if (!node || typeof CanvasRenderingContext2D === "undefined") return;
+    const context = node.getContext("2d");
+    if (!context) return;
+    const size = node.width;
+    const image = context.createImageData(size, size);
+    for (let y = 0; y < size; y++)
+      for (let x = 0; x < size; x++) {
+        const rgb = hslPixel(hue, x / (size - 1), 1 - y / (size - 1));
+        image.data.set([...rgb, 255], (y * size + x) * 4);
+      }
+    context.putImageData(image, 0, 0);
+  }, [hue]);
 
   function change(h: number, s = hsl.s, l = hsl.l) {
     setRememberedHue(h);
@@ -131,13 +153,18 @@ export function ColorPicker() {
           role="group"
           tabIndex={0}
           aria-label="Saturation and lightness"
+          aria-roledescription="two-dimensional color picker"
           aria-describedby="picker-help"
           onKeyDown={(e) => keys(e, false)}
           {...handlers(false)}
-          style={{
-            background: `linear-gradient(to bottom, white, transparent 50%, black), linear-gradient(to right, #808080, hsl(${hue} 100% 50%))`,
-          }}
         >
+          <canvas
+            ref={canvas}
+            width={160}
+            height={160}
+            aria-hidden="true"
+            className="picker-canvas"
+          />
           <i
             className="picker-indicator"
             style={{

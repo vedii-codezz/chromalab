@@ -2,7 +2,7 @@
 
 One color. An entire design language.
 
-A Next.js App Router creative color-system workspace. Phases 01–03 implement the editorial landing page, a pure OKLCH tonal engine, and an interactive manual color Studio with independent palettes, shade locks, undo/redo and validated local persistence.
+A Next.js App Router creative color laboratory. Enter with one color, collect possibilities, explore mathematical harmony relationships, compare measurable properties and preview combinations in realistic interfaces. Phase 03.5 / revised Phase 04 adds a flexible Color Playground to the existing editorial foundation and pure OKLCH engine. Semantic roles are optional.
 
 ## Run locally
 
@@ -33,7 +33,11 @@ Playwright starts its own development server at port 3100 and checks desktop and
 - Server-rendered landing and Studio routes, working navigation and skip link.
 - Shared warm neutral design system, editorial typography and static palette compositions.
 - Ten authored Blue hour shade examples, three authored palette families and static component previews.
-- Responsive tool/inspector disclosures; hue ring and saturation/lightness square, keyboard and touch controls, draft HEX/RGB/HSL entry, three independent palette families, generated shades, locks and inspector diagnostics. Presentation/export/brief controls remain unavailable.
+- Responsive tool/inspector disclosures; accurate HSL canvas picker, keyboard and touch controls, draft HEX/RGB/HSL entry, flexible color cards, generated shades, locks and inspector diagnostics. Presentation/export/brief controls remain unavailable.
+- Stable-ID color collections (up to 200), editable names/tags, duplication/removal, drag reordering with keyboard/touch arrow controls, optional roles, 50-edit undo/redo, gesture coalescing and safe v1-to-v2 persistence migration.
+- Deterministic OKLCH complementary, analogous, triadic, split-complementary, tetradic and monochromatic suggestions; explicit preview/add/reject. Neutral and gamut handling use the existing engine.
+- Explicit foreground/background comparison: WCAG 2.2 ratios and AA/AAA text checks, OKLab distance, hue/lightness/chroma relationships and descriptive collection balance. No aesthetic score or universal accessibility verdict.
+- Live Landing page, Dashboard and Component library previews using one temporary role resolver; editable mappings, named fallbacks and contrast warnings. Palette colors are never silently corrected.
 - Scoped GSAP entrance animation with context/media cleanup and reduced-motion support. Content is visible with JavaScript disabled.
 - Strict TypeScript, Tailwind v4, ESLint, Vitest/RTL and Playwright setup.
 - Strict HEX/RGB/HSL/OKLCH validation, ten-step OKLCH generation, chroma-based sRGB gamut mapping, exact normalized anchors/locks and structured diagnostics.
@@ -45,10 +49,11 @@ Playwright starts its own development server at port 3100 and checks desktop and
 - `components/layout/`: shared brand.
 - `components/shared/reveal.tsx`: small client animation boundary; the page content stays in server components.
 - `components/shared/responsive-panel.tsx`: native disclosure enhancement; panels collapse on small screens and reopen when desktop space returns.
-- `components/studio/`: interactive workspace, picker, draft inputs, inspector, generated cards and labeled legacy studies.
-- `components/preview/`: authored examples; these do not resolve live tokens yet.
+- `components/studio/`: interactive workspace, picker, drafts, Playground cards, harmony, comparison, optional roles and labeled legacy studies.
+- `components/preview/`: authored examples plus live template previews; `lib/preview-roles.ts` provides one shared temporary role resolver, separate from future semantic tokens.
 - `lib/color/demo-palettes.ts`: immutable, hand-authored samples. No color mathematics.
 - `lib/color/{validation,conversion,gamut,tonal-scale,diagnostics}.ts`: pure engine modules without React, Zustand, browser or animation dependencies.
+- `lib/color/{harmony,compatibility,picker}.ts`: pure exploration relationships, contrast/perceptual metrics and HSL pixel math.
 - `types/color.ts`: public color input, output, options and diagnostic contracts.
 - `tests/`, `e2e/`: content contracts and real browser flows.
 
@@ -99,7 +104,7 @@ Limitations: opaque sRGB HEX output only; no Display P3, alpha, color names, CSS
 
 ## Next phase
 
-Phase 03 manual editing is implemented. Brief recommendations, final semantic tokens, accessibility scoring, exports and cinematic presentation remain future work.
+Phase 03.5 / revised Phase 04 is implemented. Client Brief Studio, AI recommendations, final light/dark semantic tokens, exports and cinematic presentation remain future work. Compatibility describes properties; aesthetic judgment is left to the designer.
 
 ## Dependency notes
 
@@ -107,12 +112,16 @@ Phase 03 manual editing is implemented. Brief recommendations, final semantic to
 
 The local repository is connected to the existing GitHub repository at https://github.com/vedii-codezz/chromalab. This phase does not push, deploy or create a commit. Deployment history has not been verified.
 
-## Phase 03 — manual editing
+## Phase 03.5 / revised Phase 04 — Color Playground
 
-Choose Primary, Secondary or Accent, drag the hue ring or inner saturation/lightness square, or commit a HEX/RGB/HSL field with Enter or blur. Escape restores the field. Arrow keys operate picker controls; Shift changes ten steps. Separate saturation and lightness sliders are available. Settings adjust the anchor, lightness spreads, chroma intensity and hue drift through the existing engine.
+Add or select any color card, drag the hue ring or inner saturation/lightness square, or commit a HEX/RGB/HSL field with Enter or blur. Escape restores the field. Arrow keys operate picker controls; Shift changes ten steps. Separate saturation and lightness sliders expose accessible controls. Settings adjust the anchor, lightness spreads, chroma intensity and hue drift through the existing engine. Use each card’s earlier/later buttons to reorder without dragging. Every color can exist without a role; one color can have multiple roles. Removing a color clears its role references.
 
 All ten generated shades are selectable and lockable. A conflicting edit shows the engine diagnostic and retains the previous valid scale and locks. Undo/redo retain up to 50 edits; each pointer gesture is one edit. Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z work outside editable inputs. Reset requires confirmation and can be undone.
 
-The version 1 local project saves canonical family data after valid edits, excluding history, drafts and temporary drag state. Loading validates and regenerates every family after hydration; corrupt or unavailable storage recovers safely. Family/shade selection resets on refresh. Preview colors use temporary, explicitly labeled 600/100/400/800 mappings, not final semantic tokens.
+The version 2 project saves ordered canonical `colors` (ID/name/base HEX/anchor/settings/locks/tags) and optional `roleAssignments`. Scales and diagnostics are derived. Loading validates and regenerates colors after hydration. A valid `chroma-lab.project.v1` project migrates deterministically to `chroma-lab.project.v2`, preserving names, IDs, anchors, settings and locks and converting legacy IDs into roles. The legacy key is never overwritten or deleted. Corrupt v2 tries valid v1 before recovering a starter; unavailable storage preserves session editing. Selection resets to the first color/500 on refresh. Empty projects remain valid.
 
-See the [Phase 03 architecture](docs/superpowers/specs/2026-11-07-chroma-lab-interactive-studio.md) and [implementation record](docs/superpowers/plans/2026-11-07-chroma-lab-interactive-studio.md). Browser persistence is device-local; no cloud or multi-tab merge is implemented. Arbitrary palette choices do not guarantee preview text contrast. Legacy authored palettes and the Phase 02 engine sample remain available in a disclosure.
+Harmony uses OKLCH hue offsets; monochromatic varies L. Low-chroma colors have no reliable hue relationship, and suggestions are deduplicated after sRGB gamut mapping. Compatibility uses raw Euclidean OKLab distance and exact WCAG 2.2 opaque sRGB luminance. Similarity and balance bins are documented Studio heuristics, not universal design standards. Ratios display to four decimals with a higher-precision value; thresholds use unrounded values. Normal AA/AAA require 4.5/7; large AA/AAA require 3/4.5. A passing pair does not make a whole palette accessible.
+
+Live previews resolve temporary overrides → optional project role → labeled fallback. All templates share the same resolved values. Overrides, comparison choices and history are session-only; templates never alter project colors. Body/heading/action pair warnings help identify contrast problems without automatic corrections. This is not the final light/dark semantic token system or a complete UI accessibility audit.
+
+See the [current architecture](docs/superpowers/specs/2026-11-07-color-playground.md) and [implementation record](docs/superpowers/plans/2026-11-07-color-playground.md). Earlier Phase 01–03 documents are historical. Browser persistence is device-local; no cloud or multi-tab merge is implemented. Only opaque sRGB is supported. Legacy authored palettes and the Phase 02 engine sample remain available in a disclosure. This phase does not commit, push or deploy.

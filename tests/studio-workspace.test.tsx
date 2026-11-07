@@ -36,13 +36,13 @@ it("selects families, updates only active generated scale, locks and confirms re
     target: { value: "#ABCDEF" },
   });
   fireEvent.keyDown(screen.getByLabelText("HEX"), { key: "Enter" });
-  expect(studioStore.getState().project.families[0].baseColor).toBe("#123456");
+  expect(studioStore.getState().project.colors[0].baseColor).toBe("#123456");
   expect(
     screen.getByRole("button", { name: "Unlock shade 500" }),
   ).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Reset project" }));
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-  expect(studioStore.getState().project.families[0].baseColor).toBe("#123456");
+  expect(studioStore.getState().project.colors[0].baseColor).toBe("#123456");
   fireEvent.click(screen.getByRole("button", { name: "Reset project" }));
   fireEvent.click(screen.getByRole("button", { name: "Confirm reset" }));
   expect(screen.getByLabelText("HEX")).toHaveValue("#5479B8");

@@ -19,7 +19,7 @@ test("panels collapse on mobile and reopen when desktop space returns", async ({
   ).toBeVisible();
 });
 
-for (const width of [320, 768, 1024, 1440]) {
+for (const width of [320, 375, 768, 1024, 1440]) {
   test(`routes fit a ${width}px viewport`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 1000 });

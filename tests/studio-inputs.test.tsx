@@ -20,7 +20,7 @@ it("keeps partial drafts, rejects invalid input and synchronizes representations
   expect(hex).toHaveValue("#12");
   fireEvent.keyDown(hex, { key: "Enter" });
   expect(screen.getByRole("alert")).toBeInTheDocument();
-  expect(studioStore.getState().project.families[0].baseColor).toBe("#5479B8");
+  expect(studioStore.getState().project.colors[0].baseColor).toBe("#5479B8");
   fireEvent.keyDown(hex, { key: "Escape" });
   expect(hex).toHaveValue("#5479B8");
   fireEvent.change(hex, { target: { value: "#FF0000" } });

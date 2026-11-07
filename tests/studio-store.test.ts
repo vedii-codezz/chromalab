@@ -13,13 +13,13 @@ function memory() {
 describe("interactive project", () => {
   it("selects independent families and generates an exact live anchor", () => {
     const s = createStudioStore();
-    const before = s.getState().project.families[1];
+    const before = s.getState().project.colors[1];
     expect(s.getState().updateBaseColor("#123456")).toBe(true);
     expect(
-      s.getState().project.families[0].scale.shades.find((x) => x.id === 500)
+      s.getState().project.colors[0].scale.shades.find((x) => x.id === 500)
         ?.hex,
     ).toBe("#123456");
-    expect(s.getState().project.families[1]).toBe(before);
+    expect(s.getState().project.colors[1]).toBe(before);
     s.getState().selectFamily("secondary");
     expect(s.getState().activeFamilyId).toBe("secondary");
   });
@@ -40,9 +40,9 @@ describe("interactive project", () => {
   it("keeps non-anchor locks and reports ordering conflicts without accepting candidates", () => {
     const s = createStudioStore();
     s.getState().lockShade(100);
-    const hex = s.getState().project.families[0].locks[100];
+    const hex = s.getState().project.colors[0].locks[100];
     s.getState().updateBaseColor("#5278B7");
-    expect(s.getState().project.families[0].scale.shades[1].hex).toBe(hex);
+    expect(s.getState().project.colors[0].scale.shades[1].hex).toBe(hex);
     const p = s.getState().project;
     expect(s.getState().updateBaseColor("#FFFFFF")).toBe(false);
     expect(s.getState().project).toBe(p);
@@ -73,7 +73,7 @@ describe("interactive project", () => {
     expect(s.getState().past).toHaveLength(50);
     const p = s.getState().project;
     s.getState().reset();
-    expect(s.getState().project.families[0].baseColor).toBe("#5479B8");
+    expect(s.getState().project.colors[0].baseColor).toBe("#5479B8");
     s.getState().undo();
     expect(s.getState().project).toBe(p);
   });
@@ -89,7 +89,7 @@ describe("interactive project", () => {
     s.getState().endGesture();
     const restored = createStudioStore();
     restored.getState().hydrate(storage);
-    expect(restored.getState().project.families[0].baseColor).toBe("#ABCDEF");
+    expect(restored.getState().project.colors[0].baseColor).toBe("#ABCDEF");
     expect(restored.getState().past).toHaveLength(0);
     for (const bad of [
       "{",
@@ -99,7 +99,7 @@ describe("interactive project", () => {
       storage.setItem(STORAGE_KEY, bad);
       const fresh = createStudioStore();
       fresh.getState().hydrate(storage);
-      expect(fresh.getState().project.families).toHaveLength(3);
+      expect(fresh.getState().project.colors).toHaveLength(3);
       expect(fresh.getState().storageMessage).toMatch(/recover/i);
     }
   });
